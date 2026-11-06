@@ -59,6 +59,23 @@ class MainActivity : Activity() {
 
         updates = UpdateManager(this)
         if (savedInstanceState == null) updates.check()
+
+        // Уведомления о новых главах
+        ChapterChecker.createChannel(this)
+        ChapterChecker.schedule(this)
+        ChapterChecker.baselineIfNeeded(this)
+        askNotificationPermissionOnce()
+    }
+
+    /** Android 13+: один раз спрашиваем разрешение на уведомления. */
+    private fun askNotificationPermissionOnce() {
+        if (android.os.Build.VERSION.SDK_INT < 33) return
+        val permission = "android.permission.POST_NOTIFICATIONS"
+        if (checkSelfPermission(permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        val prefs = getSharedPreferences("app", MODE_PRIVATE)
+        if (prefs.getBoolean("notif_asked", false)) return
+        prefs.edit().putBoolean("notif_asked", true).apply()
+        requestPermissions(arrayOf(permission), 42)
     }
 
     override fun onNewIntent(intent: Intent) {

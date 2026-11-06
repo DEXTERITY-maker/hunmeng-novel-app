@@ -15,4 +15,8 @@
     <string name="update_permission_title">Нужно одно разрешение</string>
     <string name="update_permission_text">Чтобы обновляться самому, Hunmeng Novel нужно разрешение на установку приложений. Включите его на следующем экране и вернитесь назад.</string>
     <string name="update_permission_open">Открыть настройки</string>
+    <string name="notif_channel">Новые главы</string>
+    <string name="notif_channel_desc">Уведомления о выходе новых глав на Hunmeng</string>
+    <string name="notif_chapter">Глава %1$d: %2$s</string>
+    <string name="notif_many">Новых глав: %1$d</string>
 </resources>
