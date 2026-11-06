@@ -132,6 +132,15 @@ class HunmengDialog(private val activity: Activity) {
     /** Строки с иконками (описание версии). Прокручиваются, если текста много. */
     fun rows(items: List<Pair<Int, CharSequence>>): HunmengDialog {
         if (items.isEmpty()) return this
+        content.addView(TextView(activity).apply {
+            text = activity.getString(R.string.update_whats_new)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            setTextColor(c.pillText)
+            gravity = Gravity.START
+        }, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply { bottomMargin = dp(12) })
         val list = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
         for ((icon, line) in items) {
             val row = LinearLayout(activity).apply {
@@ -164,8 +173,17 @@ class HunmengDialog(private val activity: Activity) {
         return this
     }
 
-    /** Полоска прогресса + подпись. Возвращает функцию для обновления процентов. */
-    fun progress(indeterminate: Boolean): (Int) -> Unit {
+    /** Управление состоянием полоски загрузки из основного потока. */
+    class DownloadProgress(
+        val onPercent: (Int) -> Unit,
+        val onComplete: () -> Unit,
+    )
+
+    /**
+     * Загрузка APK: процент показывается, если размер известен;
+     * при неизвестном размере — анимированная полоска и понятная подпись.
+     */
+    fun progress(indeterminate: Boolean): DownloadProgress {
         val bar = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100
             isIndeterminate = indeterminate
@@ -174,7 +192,7 @@ class HunmengDialog(private val activity: Activity) {
             indeterminateTintList = ColorStateList.valueOf(c.primary)
         }
         val label = TextView(activity).apply {
-            text = "0%"
+            text = if (indeterminate) activity.getString(R.string.update_download_preparing) else "0%"
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
             setTextColor(c.pillText)
             gravity = Gravity.CENTER
@@ -182,7 +200,19 @@ class HunmengDialog(private val activity: Activity) {
         }
         content.addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(10)))
         content.addView(label)
-        return { p -> bar.progress = p; label.text = "$p%" }
+        return DownloadProgress(
+            onPercent = { p ->
+                val safePercent = p.coerceIn(0, 99)
+                bar.isIndeterminate = false
+                bar.progress = safePercent
+                label.text = "${safePercent}%"
+            },
+            onComplete = {
+                bar.isIndeterminate = false
+                bar.progress = 100
+                label.text = activity.getString(R.string.update_download_complete)
+            },
+        )
     }
 
     /** Две кнопки: слева контурная (secondary), справа залитая (primary). */
