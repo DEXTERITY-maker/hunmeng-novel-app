@@ -36,6 +36,12 @@ android {
     }
 
     buildTypes {
+        // Install the native beta next to the existing signed application.
+        // Never overwrite the user's current production app with a debug APK.
+        debug {
+            applicationIdSuffix = ".preview"
+            versionNameSuffix = "-preview"
+        }
         release {
             isMinifyEnabled = false
             // Без ключа (например, при сборке на телефоне) — временная отладочная подпись
