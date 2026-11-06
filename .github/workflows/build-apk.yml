@@ -45,6 +45,8 @@ jobs:
           VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           NAME="HunmengNovel-v${VERSION}.apk"
           cp app/build/outputs/apk/release/app-release.apk "$NAME"
+          # Постоянное имя — для кнопки «Скачать» на сайте: .../releases/latest/download/HunmengNovel.apk
+          cp app/build/outputs/apk/release/app-release.apk HunmengNovel.apk
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
@@ -59,9 +61,9 @@ jobs:
         run: |
           TAG="v${{ steps.apk.outputs.version }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "${{ steps.apk.outputs.name }}" --clobber
+            gh release upload "$TAG" "${{ steps.apk.outputs.name }}" HunmengNovel.apk --clobber
           else
-            gh release create "$TAG" "${{ steps.apk.outputs.name }}" \
+            gh release create "$TAG" "${{ steps.apk.outputs.name }}" HunmengNovel.apk \
               --title "Hunmeng Novel $TAG" \
               --notes-file RELEASE_NOTES.md
           fi

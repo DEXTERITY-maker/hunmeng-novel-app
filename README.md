@@ -20,6 +20,8 @@ Android-приложение для сайта новелл **[hunmeng-novel.ru]
 
 Каждый push в ветку `main` запускает сборку в GitHub Actions.
 Готовый файл появляется в **Releases** репозитория: `HunmengNovel-vX.Y.Z.apk`.
+Постоянная ссылка на самую свежую версию (для сайта):
+https://github.com/DEXTERITY-maker/hunmeng-novel-app/releases/latest/download/HunmengNovel.apk
 
 ## Как выпустить новую версию
 
