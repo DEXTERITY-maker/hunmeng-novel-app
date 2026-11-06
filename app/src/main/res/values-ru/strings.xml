@@ -9,6 +9,9 @@
     <string name="update_now">Обновить</string>
     <string name="update_later">Позже</string>
     <string name="update_downloading">Скачиваю обновление…</string>
+    <string name="update_whats_new">ЧТО НОВОГО</string>
+    <string name="update_download_preparing">Подготовка загрузки…</string>
+    <string name="update_download_complete">APK загружен. Открываем установку…</string>
     <string name="update_failed">Не удалось установить обновление. Попробуйте позже.</string>
     <string name="update_check_failed">Не удалось проверить обновления</string>
     <string name="update_latest">У вас последняя версия</string>
