@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -12,8 +13,8 @@ android {
         minSdk = 24
         targetSdk = 34
         // При каждом обновлении приложения увеличивай оба числа
-        versionCode = 8
-        versionName = "0.3.4"
+        versionCode = 9
+        versionName = "1.0.0"
     }
 
     // Один постоянный ключ подписи: без него новые версии не встанут поверх старых.
@@ -45,6 +46,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        compose = true
     }
 
     compileOptions {
@@ -54,4 +56,13 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+dependencies {
+    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
+    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material3:material3")
+    debugImplementation("androidx.compose.ui:ui-tooling")
 }
