@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="offline_title">Нет подключения</string>
+    <string name="offline_text">Проверьте интернет и попробуйте снова.</string>
+    <string name="retry">Повторить</string>
+    <string name="no_app_for_link">Нет приложения, чтобы открыть эту ссылку</string>
+</resources>

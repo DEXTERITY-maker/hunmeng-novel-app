@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HunmengNovel" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/cream</item>
+        <item name="android:statusBarColor">@color/navy</item>
+        <item name="android:navigationBarColor">@color/cream</item>
+        <item name="android:colorPrimary">@color/navy</item>
+        <item name="android:colorAccent">@color/green</item>
+    </style>
+</resources>
