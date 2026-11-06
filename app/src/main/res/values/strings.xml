@@ -5,4 +5,15 @@
     <string name="offline_text">Check your internet and try again.</string>
     <string name="retry">Try again</string>
     <string name="no_app_for_link">No app found to open this link</string>
+    <string name="update_title">Update available</string>
+    <string name="update_message">Version %1$s is available (you have %2$s).</string>
+    <string name="update_now">Update</string>
+    <string name="update_later">Later</string>
+    <string name="update_downloading">Downloading update…</string>
+    <string name="update_failed">Could not install the update. Try again later.</string>
+    <string name="update_check_failed">Could not check for updates</string>
+    <string name="update_latest">You have the latest version</string>
+    <string name="update_permission_title">One permission needed</string>
+    <string name="update_permission_text">To update itself, Hunmeng Novel needs permission to install apps. Turn it on in the next screen, then come back.</string>
+    <string name="update_permission_open">Open settings</string>
 </resources>

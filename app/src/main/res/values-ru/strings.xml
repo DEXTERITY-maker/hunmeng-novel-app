@@ -4,4 +4,15 @@
     <string name="offline_text">Проверьте интернет и попробуйте снова.</string>
     <string name="retry">Повторить</string>
     <string name="no_app_for_link">Нет приложения, чтобы открыть эту ссылку</string>
+    <string name="update_title">Доступно обновление</string>
+    <string name="update_message">Вышла версия %1$s (у вас %2$s).</string>
+    <string name="update_now">Обновить</string>
+    <string name="update_later">Позже</string>
+    <string name="update_downloading">Скачиваю обновление…</string>
+    <string name="update_failed">Не удалось установить обновление. Попробуйте позже.</string>
+    <string name="update_check_failed">Не удалось проверить обновления</string>
+    <string name="update_latest">У вас последняя версия</string>
+    <string name="update_permission_title">Нужно одно разрешение</string>
+    <string name="update_permission_text">Чтобы обновляться самому, Hunmeng Novel нужно разрешение на установку приложений. Включите его на следующем экране и вернитесь назад.</string>
+    <string name="update_permission_open">Открыть настройки</string>
 </resources>

@@ -43,6 +43,7 @@ class MainActivity : Activity() {
     private lateinit var progress: ProgressBar
     private lateinit var errorView: View
     private var mainFrameFailed = false
+    private lateinit var updates: UpdateManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +56,9 @@ class MainActivity : Activity() {
         if (webView.url == null) {
             webView.loadUrl(siteUrlFrom(intent) ?: HOME_URL)
         }
+
+        updates = UpdateManager(this)
+        if (savedInstanceState == null) updates.check()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -245,6 +249,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         webView.onResume()
+        updates.onResume()
     }
 
     override fun onPause() {
