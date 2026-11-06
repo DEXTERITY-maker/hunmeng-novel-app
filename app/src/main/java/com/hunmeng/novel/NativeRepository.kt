@@ -104,13 +104,31 @@ object NativeRepository {
         }
         val name = "native_chapter_" + novelSlug + "_" + chapterSlug + ".json"
         val url = BASE + "/mobile/chapters/" + novelSlug + "/" + chapterSlug + ".json"
-        val json = JSONObject(readCached(context, name, url))
-        if (json.optString("novelSlug") != novelSlug || json.optString("slug") != chapterSlug) {
-            throw java.io.IOException("Chapter response did not match the requested chapter")
+        return try {
+            val json = JSONObject(readCached(context, name, url))
+            if (json.optString("novelSlug") != novelSlug || json.optString("slug") != chapterSlug) {
+                throw java.io.IOException("Chapter response did not match the requested chapter")
+            }
+            val content = json.optString("content")
+            if (content.isBlank()) throw java.io.IOException("This chapter has no readable text")
+            NativeChapterText(json.optString("title"), content)
+        } catch (_: Exception) {
+            // The native JSON feed may not yet be deployed to the public Pages site.
+            // As a temporary fallback, extract the public chapter article as plain text;
+            // it is NEVER rendered as an HTML page or opened in WebView.
+            val html = readCached(context, "native_chapter_" + novelSlug + "_" + chapterSlug + ".html",
+                BASE + "/novel/" + novelSlug + "/" + chapterSlug + "/")
+            val anchor = html.indexOf("id=\\\"chapter-text\\\"")
+            if (anchor < 0) throw java.io.IOException("Public chapter article not found")
+            val start = html.indexOf('>', anchor)
+            val end = html.indexOf("</article>", start)
+            if (start < 0 || end <= start) throw java.io.IOException("Invalid chapter article")
+            val source = html.substring(start + 1, end)
+            val text = android.text.Html.fromHtml(source, android.text.Html.FROM_HTML_MODE_COMPACT)
+                .toString().trim()
+            if (text.isBlank()) throw java.io.IOException("Empty public chapter article")
+            NativeChapterText("Глава " + chapterSlug.substringAfterLast("-"), text)
         }
-        val content = json.optString("content")
-        if (content.isBlank()) throw java.io.IOException("This chapter has no readable text")
-        return NativeChapterText(json.optString("title"), content)
     }
 
     private fun JSONArray?.asStrings(): List<String> {
