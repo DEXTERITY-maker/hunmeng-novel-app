@@ -48,12 +48,18 @@ object ChapterChecker {
     fun schedule(context: Context) {
         val scheduler = context.getSystemService(JobScheduler::class.java) ?: return
         if (scheduler.getPendingJob(JOB_ID) != null) return
-        val job = JobInfo.Builder(JOB_ID, ComponentName(context, ChapterCheckJob::class.java))
+        fun job(persisted: Boolean) = JobInfo.Builder(JOB_ID, ComponentName(context, ChapterCheckJob::class.java))
             .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
             .setPeriodic(CHECK_EVERY_MS)
-            .setPersisted(true) // переживает перезагрузку телефона
+            .setPersisted(persisted)
             .build()
-        scheduler.schedule(job)
+        try {
+            scheduler.schedule(job(persisted = true)) // переживает перезагрузку телефона
+        } catch (e: Exception) {
+            // vivo/iQOO и другие оболочки без «Автозапуска» запрещают такую задачу —
+            // ставим обычную: она работает, пока телефон не перезагрузят (при запуске приложения поставится снова)
+            try { scheduler.schedule(job(persisted = false)) } catch (ignored: Exception) { }
+        }
     }
 
     /** Первый запуск: запоминаем все уже вышедшие главы, чтобы не завалить уведомлениями. */

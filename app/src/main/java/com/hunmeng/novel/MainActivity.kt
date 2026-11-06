@@ -47,6 +47,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        CrashReporter.install(this)
         setContentView(buildLayout())
         setupWebView()
 
@@ -58,13 +59,20 @@ class MainActivity : Activity() {
         }
 
         updates = UpdateManager(this)
-        if (savedInstanceState == null) updates.check()
 
-        // Уведомления о новых главах
-        ChapterChecker.createChannel(this)
-        ChapterChecker.schedule(this)
-        ChapterChecker.baselineIfNeeded(this)
-        askNotificationPermissionOnce()
+        // Дополнительные функции не должны ронять приложение: сайт откроется в любом случае
+        safely { if (savedInstanceState == null) updates.check() }
+        safely { ChapterChecker.createChannel(this) }
+        safely { ChapterChecker.schedule(this) }
+        safely { ChapterChecker.baselineIfNeeded(this) }
+        safely { askNotificationPermissionOnce() }
+
+        // Если прошлый запуск упал — показываем текст ошибки, чтобы его можно было прислать
+        if (savedInstanceState == null) safely { CrashReporter.showLastCrash(this) }
+    }
+
+    private inline fun safely(block: () -> Unit) {
+        try { block() } catch (e: Exception) { CrashReporter.save(this, e) }
     }
 
     /** Android 13+: один раз спрашиваем разрешение на уведомления. */
@@ -266,7 +274,7 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         webView.onResume()
-        updates.onResume()
+        safely { updates.onResume() }
     }
 
     override fun onPause() {

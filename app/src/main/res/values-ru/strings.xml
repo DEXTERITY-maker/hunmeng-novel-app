@@ -19,4 +19,9 @@
     <string name="notif_channel_desc">Уведомления о выходе новых глав на Hunmeng</string>
     <string name="notif_chapter">Глава %1$d: %2$s</string>
     <string name="notif_many">Новых глав: %1$d</string>
+    <string name="crash_title">Произошла ошибка</string>
+    <string name="crash_text">В прошлый раз приложение столкнулось с ошибкой. Скопируйте текст и пришлите разработчику.</string>
+    <string name="crash_copy">Скопировать</string>
+    <string name="crash_close">Закрыть</string>
+    <string name="crash_copied">Скопировано</string>
 </resources>
