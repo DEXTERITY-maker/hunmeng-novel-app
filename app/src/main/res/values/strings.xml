@@ -6,7 +6,7 @@
     <string name="retry">Try again</string>
     <string name="no_app_for_link">No app found to open this link</string>
     <string name="update_title">Update available</string>
-    <string name="update_message">Version %1$s is available (you have %2$s).</string>
+    <string name="update_message">Version %1$s is available — you have %2$s</string>
     <string name="update_now">Update</string>
     <string name="update_later">Later</string>
     <string name="update_downloading">Downloading update…</string>

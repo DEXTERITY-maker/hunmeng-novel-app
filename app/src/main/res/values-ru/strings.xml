@@ -5,7 +5,7 @@
     <string name="retry">Повторить</string>
     <string name="no_app_for_link">Нет приложения, чтобы открыть эту ссылку</string>
     <string name="update_title">Доступно обновление</string>
-    <string name="update_message">Вышла версия %1$s (у вас %2$s).</string>
+    <string name="update_message">Доступна версия %1$s — сейчас у вас %2$s</string>
     <string name="update_now">Обновить</string>
     <string name="update_later">Позже</string>
     <string name="update_downloading">Скачиваю обновление…</string>

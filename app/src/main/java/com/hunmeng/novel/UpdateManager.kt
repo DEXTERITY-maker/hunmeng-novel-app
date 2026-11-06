@@ -1,7 +1,6 @@
 package com.hunmeng.novel
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -11,9 +10,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
 import android.widget.Toast
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -118,31 +114,19 @@ class UpdateManager(private val activity: Activity) {
 
     private fun offer(release: Release) {
         val version = release.version.removePrefix("v")
-        val message = buildString {
-            append(activity.getString(R.string.update_message, version, BuildConfig.VERSION_NAME))
-            if (release.notes.isNotEmpty()) append("\n\n").append(cleanNotes(release.notes))
-        }
-        AlertDialog.Builder(activity)
-            .setTitle(R.string.update_title)
-            .setMessage(message)
-            .setPositiveButton(R.string.update_now) { _, _ -> startInstall(release) }
-            .setNegativeButton(R.string.update_later) { _, _ ->
+        HunmengDialog(activity)
+            .ornament()
+            .title(activity.getString(R.string.update_title))
+            .pill(activity.getString(R.string.update_message, version, BuildConfig.VERSION_NAME))
+            .rows(HunmengDialog.parseNotes(release.notes))
+            .buttons(activity.getString(R.string.update_later), {
                 prefs.edit()
                     .putString(KEY_POSTPONED_VERSION, release.version)
                     .putLong(KEY_POSTPONED_AT, System.currentTimeMillis())
                     .apply()
-            }
+            }, activity.getString(R.string.update_now)) { startInstall(release) }
             .show()
     }
-
-    /** Убираем из описания релиза разметку Markdown, чтобы текст читался в окне. */
-    private fun cleanNotes(notes: String): String =
-        notes.lines().joinToString("\n") { line ->
-            line.replace(Regex("^#+\\s*"), "")
-                .replace(Regex("^[-*]\\s+"), "• ")
-                .replace("**", "")
-                .replace("`", "")
-        }.trim()
 
     private fun canInstall(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
@@ -155,10 +139,12 @@ class UpdateManager(private val activity: Activity) {
         }
         // Android 8+: нужно разрешение «Установка неизвестных приложений» для Hunmeng Novel
         pendingRelease = release
-        AlertDialog.Builder(activity)
-            .setTitle(R.string.update_permission_title)
-            .setMessage(R.string.update_permission_text)
-            .setPositiveButton(R.string.update_permission_open) { _, _ ->
+        HunmengDialog(activity)
+            .ornament()
+            .title(activity.getString(R.string.update_permission_title))
+            .text(activity.getString(R.string.update_permission_text))
+            .buttons(activity.getString(android.R.string.cancel), { pendingRelease = null },
+                activity.getString(R.string.update_permission_open)) {
                 try {
                     activity.startActivity(
                         Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
@@ -169,37 +155,20 @@ class UpdateManager(private val activity: Activity) {
                     toast(R.string.update_failed)
                 }
             }
-            .setNegativeButton(android.R.string.cancel) { _, _ -> pendingRelease = null }
             .show()
     }
 
     private fun download(release: Release) {
-        val density = activity.resources.displayMetrics.density
-        val pad = (24 * density).toInt()
-        val bar = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100
-            isIndeterminate = release.apkSize <= 0
-        }
-        val label = TextView(activity).apply { text = "0%" }
-        val box = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(pad, pad / 2, pad, 0)
-            addView(bar)
-            addView(label)
-        }
-        val dialog = AlertDialog.Builder(activity)
-            .setTitle(R.string.update_downloading)
-            .setView(box)
-            .setCancelable(false)
-            .show()
+        val box = HunmengDialog(activity)
+            .ornament()
+            .title(activity.getString(R.string.update_downloading))
+        val setProgress = box.progress(indeterminate = release.apkSize <= 0)
+        val dialog = box.show(cancelable = false)
 
         Thread {
             val ok = try {
                 installViaSession(release) { percent ->
-                    main.post {
-                        bar.progress = percent
-                        label.text = "$percent%"
-                    }
+                    main.post { setProgress(percent) }
                 }
                 true
             } catch (e: Exception) {
