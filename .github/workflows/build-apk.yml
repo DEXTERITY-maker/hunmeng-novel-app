@@ -68,4 +68,7 @@ jobs:
           if [ -z "$HUNMENG_KEYSTORE" ]; then
             gh release edit "$TAG" --prerelease \
               --notes "ТЕСТОВАЯ сборка (временная подпись, коммит ${GITHUB_SHA::7}). Следующая версия не встанет поверх неё — перед установкой новой эту нужно удалить."
+          else
+            gh release edit "$TAG" --prerelease=false \
+              --notes "Сборка из коммита ${GITHUB_SHA::7}, подписана постоянным ключом. Скачай APK ниже и установи — следующие версии встанут поверх."
           fi
