@@ -162,22 +162,36 @@ class UpdateManager(private val activity: Activity) {
         val box = HunmengDialog(activity)
             .ornament()
             .title(activity.getString(R.string.update_downloading))
-        val setProgress = box.progress(indeterminate = release.apkSize <= 0)
+        val progress = box.progress(indeterminate = release.apkSize <= 0)
         val dialog = box.show(cancelable = false)
 
         Thread {
             val ok = try {
                 installViaSession(release) { percent ->
-                    main.post { setProgress(percent) }
+                    main.post {
+                        if (dialog.isShowing) progress.onPercent(percent)
+                    }
                 }
                 true
             } catch (e: Exception) {
                 false
             }
             main.post {
-                if (dialog.isShowing) dialog.dismiss()
-                if (!ok) toast(R.string.update_failed)
-                // При успехе дальше показывается системное окно установки (см. UpdateReceiver)
+                if (activity.isFinishing || activity.isDestroyed) {
+                    if (dialog.isShowing) dialog.dismiss()
+                    return@post
+                }
+                if (!ok) {
+                    if (dialog.isShowing) dialog.dismiss()
+                    toast(R.string.update_failed)
+                } else if (dialog.isShowing) {
+                    // APK полностью записан и передан системному установщику.
+                    // Не называем это успешной установкой: её подтверждает Android.
+                    progress.onComplete()
+                    main.postDelayed({
+                        if (dialog.isShowing) dialog.dismiss()
+                    }, 1600L)
+                }
             }
         }.start()
     }
@@ -210,9 +224,14 @@ class UpdateManager(private val activity: Activity) {
                             out.write(buffer, 0, n)
                             done += n
                             if (total > 0) {
-                                val percent = (done * 100 / total).toInt().coerceIn(0, 100)
+                                val percent = (done * 100 / total).toInt().coerceIn(0, 99)
                                 if (percent != lastPercent) { lastPercent = percent; onProgress(percent) }
                             }
+                        }
+                        if (total > 0 && done != total) {
+                            throw java.io.IOException(
+                                "Incomplete APK download: received $done of $total bytes"
+                            )
                         }
                         session.fsync(out)
                     }
