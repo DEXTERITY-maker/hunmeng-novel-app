@@ -118,7 +118,7 @@ object NativeRepository {
             // it is NEVER rendered as an HTML page or opened in WebView.
             val html = readCached(context, "native_chapter_" + novelSlug + "_" + chapterSlug + ".html",
                 BASE + "/novel/" + novelSlug + "/" + chapterSlug + "/")
-            val anchor = html.indexOf("id=\\\"chapter-text\\\"")
+            val anchor = html.indexOf("id=" + 34.toChar() + "chapter-text" + 34.toChar())
             if (anchor < 0) throw java.io.IOException("Public chapter article not found")
             val start = html.indexOf('>', anchor)
             val end = html.indexOf("</article>", start)
