@@ -22,9 +22,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: Install Android SDK 35
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      # GitHub's Ubuntu Android runner already provides the SDK tooling.
+      # Gradle installs the compileSdk platform when necessary.
       - uses: gradle/actions/setup-gradle@v4
       - name: Compile debug APK (no release published)
         run: |
