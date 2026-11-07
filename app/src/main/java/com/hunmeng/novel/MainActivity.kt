@@ -278,6 +278,7 @@ class MainActivity : Activity() {
     }
 
     override fun onPause() {
+        safely { updates.onPause() }
         webView.onPause()
         CookieManager.getInstance().flush()
         super.onPause()
