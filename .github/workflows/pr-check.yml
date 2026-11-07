@@ -25,7 +25,7 @@ jobs:
       # GitHub's Ubuntu Android runner already provides the SDK tooling.
       # Gradle installs the compileSdk platform when necessary.
       - uses: gradle/actions/setup-gradle@v4
-      - name: Compile debug APK (no release published)
+      - name: Test and compile debug APK (no release published)
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug

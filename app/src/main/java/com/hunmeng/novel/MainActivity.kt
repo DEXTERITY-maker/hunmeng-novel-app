@@ -61,7 +61,7 @@ class MainActivity : Activity() {
         updates = UpdateManager(this)
 
         // Дополнительные функции не должны ронять приложение: сайт откроется в любом случае
-        safely { if (savedInstanceState == null) updates.check() }
+        // Проверка обновления выполняется в onResume — при запуске и возврате в приложение.
         safely { ChapterChecker.createChannel(this) }
         safely { ChapterChecker.schedule(this) }
         safely { ChapterChecker.baselineIfNeeded(this) }
@@ -278,6 +278,7 @@ class MainActivity : Activity() {
     }
 
     override fun onPause() {
+        safely { updates.onPause() }
         webView.onPause()
         CookieManager.getInstance().flush()
         super.onPause()

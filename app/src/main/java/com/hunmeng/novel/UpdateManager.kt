@@ -1,6 +1,7 @@
 package com.hunmeng.novel
 
 import android.app.Activity
+import android.app.Dialog
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.widget.Toast
 import org.json.JSONObject
@@ -29,20 +31,10 @@ class UpdateManager(private val activity: Activity) {
         private const val KEY_POSTPONED_VERSION = "postponed_version"
         private const val KEY_POSTPONED_AT = "postponed_at"
         private const val REMIND_AFTER_MS = 24L * 60 * 60 * 1000 // «Позже» — спросим снова через сутки
+        private const val CHECK_AGAIN_MS = 15L * 60 * 1000 // Проверять после возвращения, но не на каждом onResume
 
-        /** "v0.2.0" → [0, 2, 0]; сравнение по частям. */
-        fun isNewer(remote: String, local: String): Boolean {
-            fun parts(v: String) = v.trim().removePrefix("v").removePrefix("V")
-                .split('.', '-').map { it.toIntOrNull() ?: 0 }
-            val r = parts(remote)
-            val l = parts(local)
-            for (i in 0 until maxOf(r.size, l.size)) {
-                val a = r.getOrElse(i) { 0 }
-                val b = l.getOrElse(i) { 0 }
-                if (a != b) return a > b
-            }
-            return false
-        }
+        fun isNewer(remote: String, local: String): Boolean =
+            UpdateReleasePolicy.isNewer(remote, local)
     }
 
     private data class Release(val version: String, val notes: String, val apkUrl: String, val apkSize: Long)
@@ -50,32 +42,61 @@ class UpdateManager(private val activity: Activity) {
     private val main = Handler(Looper.getMainLooper())
     private val prefs = activity.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private var pendingRelease: Release? = null
+    private var checking = false
+    private var lastCheckAt = -1L
+    private var activeUpdateDialog: Dialog? = null
+    private var foreground = false
+    private var queuedRelease: Release? = null
 
-    /** Проверка при запуске. manual = true — пользователь сам попросил проверить. */
+    /**
+     * Check official releases asynchronously. Single-flight avoids overlapping requests
+     * and duplicate modals on repeated onResume calls.
+     */
     fun check(manual: Boolean = false) {
+        if (checking || pendingRelease != null || activeUpdateDialog?.isShowing == true ||
+            activity.isFinishing || activity.isDestroyed) return
+        checking = true
+        lastCheckAt = SystemClock.elapsedRealtime()
         Thread {
-            val release = try { fetchLatest() } catch (e: Exception) { null }
+            val release = try { fetchLatest() } catch (_: Exception) { null }
             main.post {
-                if (activity.isFinishing) return@post
+                checking = false
+                if (activity.isFinishing || activity.isDestroyed) return@post
                 when {
                     release == null ->
                         if (manual) toast(R.string.update_check_failed)
                     !isNewer(release.version, BuildConfig.VERSION_NAME) ->
                         if (manual) toast(R.string.update_latest)
                     !manual && wasPostponed(release.version) -> Unit
+                    activeUpdateDialog?.isShowing == true -> Unit
+                    !foreground -> { queuedRelease = release }
                     else -> offer(release)
                 }
             }
         }.start()
     }
 
-    /** Вызывается из onResume: если ушли в настройки за разрешением — продолжаем установку. */
+    /** Also checks when the already-running app is reopened, not only at first launch. */
     fun onResume() {
-        val release = pendingRelease ?: return
-        if (canInstall()) {
-            pendingRelease = null
-            download(release)
+        foreground = true
+        pendingRelease?.let { release ->
+            if (canInstall()) {
+                pendingRelease = null
+                download(release)
+            }
+            return
         }
+        queuedRelease?.let { release ->
+            queuedRelease = null
+            if (!wasPostponed(release.version)) offer(release)
+            return
+        }
+        val now = SystemClock.elapsedRealtime()
+        if (UpdateReleasePolicy.shouldCheck(lastCheckAt, now, CHECK_AGAIN_MS)) check()
+    }
+
+    fun onPause() {
+        foreground = false
     }
 
     private fun fetchLatest(): Release? {
@@ -91,7 +112,11 @@ class UpdateManager(private val activity: Activity) {
             val assets = json.getJSONArray("assets")
             for (i in 0 until assets.length()) {
                 val asset = assets.getJSONObject(i)
-                if (asset.getString("name").endsWith(".apk", ignoreCase = true)) {
+                if (asset.optString("name").endsWith(".apk", ignoreCase = true) &&
+                    asset.optString("state") == "uploaded" &&
+                    asset.optLong("size", 0) > 0 &&
+                    UpdateReleasePolicy.trustedApk(asset.optString("browser_download_url"))
+                ) {
                     return Release(
                         version = json.getString("tag_name"),
                         notes = json.optString("body", "").trim(),
@@ -114,7 +139,7 @@ class UpdateManager(private val activity: Activity) {
 
     private fun offer(release: Release) {
         val version = release.version.removePrefix("v")
-        HunmengDialog(activity)
+        activeUpdateDialog = HunmengDialog(activity)
             .ornament()
             .title(activity.getString(R.string.update_title))
             .pill(activity.getString(R.string.update_message, version, BuildConfig.VERSION_NAME))
@@ -125,7 +150,8 @@ class UpdateManager(private val activity: Activity) {
                     .putLong(KEY_POSTPONED_AT, System.currentTimeMillis())
                     .apply()
             }, activity.getString(R.string.update_now)) { startInstall(release) }
-            .show()
+            .show(cancelable = false)
+            .also { it.setOnDismissListener { activeUpdateDialog = null } }
     }
 
     private fun canInstall(): Boolean =
@@ -198,6 +224,7 @@ class UpdateManager(private val activity: Activity) {
 
     /** Скачивает APK прямо в сессию системного установщика и отправляет её на установку. */
     private fun installViaSession(release: Release, onProgress: (Int) -> Unit) {
+        require(UpdateReleasePolicy.trustedApk(release.apkUrl)) { "Untrusted APK source" }
         val installer = activity.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
             .apply { setAppPackageName(activity.packageName) }

@@ -257,12 +257,14 @@ class HunmengDialog(private val activity: Activity) {
         dialog.setContentView(content)
         dialog.setCancelable(cancelable)
         dialog.setCanceledOnTouchOutside(false)
+        dialog.show()
+        // Apply dimensions AFTER show(), when Android has attached the dialog window.
         dialog.window?.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
             setLayout(dialogWidth(), ViewGroup.LayoutParams.WRAP_CONTENT)
             setDimAmount(0.45f)
+            addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         }
-        dialog.show()
         return dialog
     }
 
