@@ -25,6 +25,10 @@ internal object UpdateReleasePolicy {
         return false
     }
 
+    /** The first foreground entry checks immediately, then subsequent checks are throttled. */
+    fun shouldCheck(lastCheckAt: Long, now: Long, intervalMs: Long): Boolean =
+        lastCheckAt < 0 || (now >= lastCheckAt && now - lastCheckAt >= intervalMs)
+
     /** Allow APK downloads only from this app's GitHub Releases repository. */
     fun trustedApk(url: String): Boolean = try {
         val uri = URI(url)
