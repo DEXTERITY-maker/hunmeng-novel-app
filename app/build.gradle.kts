@@ -12,8 +12,8 @@ android {
         minSdk = 24
         targetSdk = 34
         // При каждом обновлении приложения увеличивай оба числа
-        versionCode = 8
-        versionName = "0.3.4"
+        versionCode = 9
+        versionName = "0.3.5"
     }
 
     // Один постоянный ключ подписи: без него новые версии не встанут поверх старых.
@@ -54,4 +54,9 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
 }
