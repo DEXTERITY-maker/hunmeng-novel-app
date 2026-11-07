@@ -45,6 +45,8 @@ class UpdateManager(private val activity: Activity) {
     private var checking = false
     private var lastCheckAt = -1L
     private var activeUpdateDialog: Dialog? = null
+    private var foreground = false
+    private var queuedRelease: Release? = null
 
     /**
      * Check official releases asynchronously. Single-flight avoids overlapping requests
@@ -67,6 +69,7 @@ class UpdateManager(private val activity: Activity) {
                         if (manual) toast(R.string.update_latest)
                     !manual && wasPostponed(release.version) -> Unit
                     activeUpdateDialog?.isShowing == true -> Unit
+                    !foreground -> { queuedRelease = release }
                     else -> offer(release)
                 }
             }
@@ -75,6 +78,7 @@ class UpdateManager(private val activity: Activity) {
 
     /** Also checks when the already-running app is reopened, not only at first launch. */
     fun onResume() {
+        foreground = true
         pendingRelease?.let { release ->
             if (canInstall()) {
                 pendingRelease = null
@@ -82,8 +86,17 @@ class UpdateManager(private val activity: Activity) {
             }
             return
         }
+        queuedRelease?.let { release ->
+            queuedRelease = null
+            if (!wasPostponed(release.version)) offer(release)
+            return
+        }
         val now = SystemClock.elapsedRealtime()
-        if (lastCheckAt < 0 || now - lastCheckAt >= CHECK_AGAIN_MS) check()
+        if (UpdateReleasePolicy.shouldCheck(lastCheckAt, now, CHECK_AGAIN_MS)) check()
+    }
+
+    fun onPause() {
+        foreground = false
     }
 
     private fun fetchLatest(): Release? {
